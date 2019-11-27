@@ -1,4 +1,4 @@
-# 3.1 엔티티 매니저 팩토리와 엔티티 매니저
+# 엔티티 매니저 팩토리와 엔티티 매니저
 
 엔티티 매니저 - 엔티티 매니저는 엔티티를 관리하는 관리자이다. 저장, 수정, 삭제 등을 처리한다.
             앤티티 매니저는 엔티티 매니저 팩토리에서 가져올 수 있다. 보통 하나의 데이터베이스를 사용하는 애플리케이션은 하나의 엔티티 팩토리 매니저를 생성한다.  
@@ -11,7 +11,7 @@ EntityManager em = emf.createEntitymanager();
 영속성 컨텍스트 - 굳이 번역하자면 '엔티티를 영구 저장하는 환경', 엔티티 매니저로 엔티티를 저장하거나 조회하면 엔티티 매니저는 영속성 컨텍스트에 엔티티를 보관함.  
               영속성 컨텍스트를 엔티티 매니저를 생성할 때 하나 만들어진다. 그리고 엔티티 매니저를 통해서 영속성 컨텍스트에 접근할 수 있고, 관리할 수 있다.
 
-엔티티의 생명주기 - 비영속, 영속, 준영속, 삭제로 분류됨. 아래의 예시로 정리
+# 엔티티의 생명주기 - 비영속, 영속, 준영속, 삭제로 분류됨. 아래의 예시로 정리
 
 ```java
 Member m = new Member();
@@ -39,7 +39,7 @@ Member findMember = em.find(Member.class, "member1"); // 1차 캐시에서 조�
 */
 ```
 
-등록 및 수정 예제  
+# 등록 및 수정 예제  
 
 ```java
 EntityManagerFactory emf = Persistence.createEntityManagerFactory("jpatest");
@@ -70,16 +70,16 @@ transaction.end();
 */
 ```
 
-삭제 예제 - 삭제된 엔티티는 재사용하지 말고 자연스럽게 GC의 대상이 되도록 하는 것이 좋다.s
+# 삭제 예제 - 삭제된 엔티티는 재사용하지 말고 자연스럽게 GC의 대상이 되도록 하는 것이 좋다.s
 ```java
 Member memberA = em.find(Member.class, "member1");
 em.remove(memberA);
 ```
 
-Flush - 영속성 컨테스트의 변셩 내용을 데이터베이스에 반영한다.
-        변경 감지(Dirty Checking)이 동작하여 영속성 컨텍스트에 있는 모든 엔티티를 스냅샷과 비교해서
-        수정된 엔티티를 찾는다. 수정된 엔티티는 수정 쿼리를 만들어 쓰기 지연 SQL 저장소에 등록한다.
-        쓰기 지연 SQL 저장소의 쿼리를 데이터베이스에 전송한다.
+# Flush - 영속성 컨테스트의 변셩 내용을 데이터베이스에 반영한다.
+변경 감지(Dirty Checking)이 동작하여 영속성 컨텍스트에 있는 모든 엔티티를 스냅샷과 비교해서  
+수정된 엔티티를 찾는다. 수정된 엔티티는 수정 쿼리를 만들어 쓰기 지연 SQL 저장소에 등록한다.  
+쓰기 지연 SQL 저장소의 쿼리를 데이터베이스에 전송한다.  
 
         Flush 호출 방법
         1. em.flush() 호출
@@ -103,7 +103,7 @@ em.setFlushMode(FlushModeType.AUTO); // 커밋이나 쿼리를 실행할 때 플
 
 준영속은 스킵..
 
-영속성 컨텍스트 종료 : close()
+# 영속성 컨텍스트 종료 : close()
 
 ```java
 public void closeEntityManager() {
@@ -122,4 +122,4 @@ public void closeEntityManager() {
 }
 ```
 
-병합 Merge
+# 병합 Merge
