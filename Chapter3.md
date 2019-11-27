@@ -70,8 +70,56 @@ transaction.end();
 */
 ```
 
-삭제 예제 - 삭제된 엔티티는 재사용하지 말고 자연스럽게 GC의 대상이 되도록 하는 것이 좋다.
+삭제 예제 - 삭제된 엔티티는 재사용하지 말고 자연스럽게 GC의 대상이 되도록 하는 것이 좋다.s
 ```java
 Member memberA = em.find(Member.class, "member1");
 em.remove(memberA);
 ```
+
+Flush - 영속성 컨테스트의 변셩 내용을 데이터베이스에 반영한다.
+        변경 감지(Dirty Checking)이 동작하여 영속성 컨텍스트에 있는 모든 엔티티를 스냅샷과 비교해서
+        수정된 엔티티를 찾는다. 수정된 엔티티는 수정 쿼리를 만들어 쓰기 지연 SQL 저장소에 등록한다.
+        쓰기 지연 SQL 저장소의 쿼리를 데이터베이스에 전송한다.
+
+        Flush 호출 방법
+        1. em.flush() 호출
+        2. 트랜잭션 커밋 시 플러시가 자동으로 호출된다.
+        3. JPQL 쿼리 실행 시 플러시가 자동 호출된다.
+
+```java
+em.persist(memberA);
+em.persist(memberB);
+em.persist(memberC);
+
+// 중간에 쿼리 실행
+query = em.createQuery("select m from Member m", Member.class); // MemberA, MemberB, MemberC 조회되지 않는다.
+List<Member> members = query.getResultList();
+```
+
+Flush모드 옵션
+em.setFlushMode(FlushModeType.COMMIT); // 플러시 모드 직접설정 (커밋할때만 플러시)
+em.setFlushMode(FlushModeType.AUTO); // 커밋이나 쿼리를 실행할 때 플러시(기본값)
+
+
+준영속은 스킵..
+
+영속성 컨텍스트 종료 : close()
+
+```java
+public void closeEntityManager() {
+    EntityManagerFactory emf = Persistence.createEntityManager("jpabook");
+    EntityManager em = emf.createEntityManager();
+    EntityTransaction transaction = em.getTransaction();
+
+    transaction.begin();
+
+    MemberA memberA = em.find(Member.class, "memberA");
+    MemberB memberB = em.find(Member.class, "memberB");
+    
+    transaction.commit();
+
+    em.close();
+}
+```
+
+병합 Merge
