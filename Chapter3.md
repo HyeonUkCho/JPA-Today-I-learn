@@ -70,7 +70,7 @@ transaction.end();
 */
 ```
 
-# 삭제 예제 - 삭제된 엔티티는 재사용하지 말고 자연스럽게 GC의 대상이 되도록 하는 것이 좋다.s
+# 삭제 예제 - 삭제된 엔티티는 재사용하지 말고 자연스럽게 GC의 대상이 되도록 하는 것이 좋다.
 ```java
 Member memberA = em.find(Member.class, "member1");
 em.remove(memberA);
@@ -123,3 +123,4 @@ public void closeEntityManager() {
 ```
 
 # 병합 Merge
+준영속 상태에서 영속 상태로 바꿀 때 사용.
