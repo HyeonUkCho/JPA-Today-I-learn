@@ -37,7 +37,7 @@ public class Team {
 
     // Getter, Setter...
 }
-
+```
 
 ## @JoinColumn 주요 속성
     1. name : 매핑할 외래 키 이름 (default : 필드명 + _ + 참조하는 테이블의 기본 키 컬럼명)
