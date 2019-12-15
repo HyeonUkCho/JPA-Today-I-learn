@@ -1,11 +1,11 @@
 7장 고급 매핑
 ==============
 
-- 상속 관계 매핑 : 일단 패스
+- 상속 관계 매핑 (일단 패스..필요할 때 찾아보고 정리하기...)
 - @MappedSuperclass
 - 복합 키와 식별 관계 매핑
-- 조인 테이블
-- 엔티티 하나에 여러 테이블 매핑하기
+- 조인 테이블 (일단 패스..필요할 때 찾아보고 정리하기...)
+- 엔티티 하나에 여러 테이블 매핑하기 (일단 패스..필요할 때 찾아보고 정리하기...)
 
 
 ## @MappedSuperclass
@@ -202,4 +202,258 @@ em.persist(Parent);
 - 자바의 모든 클래스는 기본으로 Object를 상속하면서 equals의 참조 값 비교인 == 비교 (동일성)을 하기 때문에 식별자로 비교를 하기 위해 꼭 구현해야 한다.
 
 ## 복합 키 : 식별 관계 매핑
+- 식별 관계에서 자식 테이블은 부모 테이블의 기본 키를 포함해서 복합 키를 구성해야 하므로 @IdClass나 @EmbeddedId를 사용해서 식별자를 매핑해야 한다.
+
+## 부모, 자식, 손자로 계속 기본 키를 전달하는 식별 관계 IdClass 사용 예제
+
+```java
+
+// Parent
+@Entity
+public class Parent {
+
+    @Id @Column(name="PARENT_ID")
+    private String id;
+
+    private String name;
+    ...
+}
+
+// Child
+@Entity
+@IdClass(ChildId.class)
+public class Child {
+
+    @Id
+    @ManyToOne(name="PARENT_ID")
+    public Parent parent;
+
+    @Id @Column(name="CHILD_ID")
+    private String childId;
+
+    private string name;
+    ...
+}
+
+//ChildId
+public class ChildId implements Serializable {
+
+    private String parent; // Child.parent 매핑
+    private string childId; //Child.childId 매핑
+
+    //equals, hashCode
+    ...
+}
+
+// GrandChild
+@Entity
+@IdClass(GrandChildId.class)
+public class GrandChild {
+
+    @Id
+    @ManyToOne
+    @JoinColumns ({
+        @JoinColumn(name="PARENT_ID"),
+        @JoinColumn(name="CHILD_ID")
+    })
+    private Child child;
+
+    @Id @Column(name="GRANDCHILD_ID")
+    private String id;
+
+    private String name;
+    ...
+
+}
+
+// GrandChildId
+public class GrandChildId implements Serializable {
+
+    private ChildId child; // GrandChild.child 매핑
+    private String id; // GrandChild.id 매핑
+
+    // equals, hashCode
+    ...
+}
+```
+
+## 부모, 자식, 손자로 계속 기본 키를 전달하는 식별 관계 @EmbeddedClass 사용 예제
+
+```java
+
+// Parent
+@Entity
+public class Parent {
+
+    @Id @Column(name="PARENT_ID")
+    private String id;
+
+    private String name;
+    ...
+}
+
+// Child
+@Entity
+public class Child {
+
+    @EmbeddedId
+    private Child child;
+
+    @MapsId("parentId") // ChildId.parentId 매핑.
+    @ManyToOne
+    @JoinColumn(name="PARENT_ID")
+    public Parent parent;
+
+    private string name;
+    ...
+}
+
+//ChildId
+@Embeddable
+public class ChildId implements Serializable {
+
+    private String parentId; // MapsId("parentId") 매핑
+    
+    @Column(name="CHILD_ID")
+    private string childId; //Child.childId 매핑
+
+    //equals, hashCode
+    ...
+}
+
+// GrandChild
+@Entity
+public class GrandChild {
+
+    @EmbeddedId
+    private GrandChildId id;
+
+    @MapsId("childId")  // GrandChildId.childId 매핑
+    @ManyToOne
+    @JoinColumns ({
+        @JoinColumn(name="PARENT_ID"),
+        @JoinColumn(name="CHILD_ID")
+    })
+    private Child child;
+
+    private String name;
+    ...
+
+}
+
+// GrandChildId
+@Embeddable
+public class GrandChildId implements Serializable {
+
+    private ChildId childId; // @MapsId("childId") 매핑
+    
+    @Column(name="GRANDCHILD_ID")
+    private String id;
+
+    // equals, hashCode
+    ...
+}
+```
+
+## 부모, 자식, 손자로 계속 기본 키를 전달하는 비식별 관계 @EmbeddedClass 사용 예제
+
+```java
+
+@Entity
+public class Parent {
+
+    @Id @GeneratedValue
+    @Column(name="PARENT_ID")
+    private Long id;
+
+    private String name;
+    ...
+}
+
+@Entity
+public class Child {
+
+    @Id @GeneratedValue
+    @Column(name="CHILD_ID")
+    private Long id;
+
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name="PARENT_ID")
+    private Parent parent;
+
+    ...
+
+}
+
+@Entity
+public class GrandChild {
+
+    @Id @GeneratedValue
+    @Column(name="GRANDCHILD_ID")
+    private Long id;
+
+    private String name
+
+    @ManyToOne
+    @JoinColumn(name="CHILD_ID")
+    private Child child;
+
+    ...
+}
+
+```
+
+## 비식별 관계 선호...하는 이유
+- 데이터베이스 관점에서 아래와 같은 이유로 비식별 관계를 선호한다.
+    1. 식별 관계는 부모 테이블의 기본 키를 자식 테이블로 전파하면서 자식 테이블의 기본 키 컬럼이 점점 늘어난다. 결국 조인할 때, SQL이 복잡해지고 기본 키 인덱스가 불필요하게 커질 수 있다.
+    2. 식별 관계는 2개 이상의 컬럼을 합해서 복합 기본 키를 만들어야 하는 경우가 많다.
+    3. 식별 관계를 사용할 때 키본 키로 비즈니스 의미가 있는 자연 키 컬럼을 조합하는 경우가 많다. 반면에 비식별 관계의 기본 키는 비즈니스와 전혀 관계없는 대리 키를 주로 사용한다. 비즈니스 요구사항은 시간이 지남에 따라 언젠가는 변한다. 식별 관계의 자연 키 컬럼들이 자식에 손자까지 전파되면 변경하기 힘들다.
+    4. 식별 관계는 부모의 테이블의 기본 키를 자식 테이블의 기본 키로 사용하므로 비식별 관계보다 테이블의 구조가 유연하지 못하다.
+
+- 객체 관계 매핑의 관점에서는 아래와 같은 이유로 비식별 관계를 선호한다.
+    1. 일대일 관례를 제외하고 식별 관계는 2개 이상의 컬럼을 묶은 복합 기본 키를 사용한다. JPA에서 복합 키는 별도의 복합 키 클래스를 만들어서 사용해야 한다. 따라서 컬럼이 하나인 기본 키를 매핑하는 것보다 많은 노력이 필요하다.
+    2. 비식별 관계의 기본 키는 주로 대리 키를 사용하는데 JPA는 @GeneratedValue처럼 대리 키를 생성하기 위한 편리한 방법을 제공한다. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
