@@ -260,6 +260,7 @@ public class MemberProduct {
     private Product product;       // MemberProductId.product 와 연결.    
 }
 
+// 회원상품 식별자 클래스
 public class MemberProductId implements Serializable {
     private String member  // MemberProduct.member 와 연결
     private String product // MemberProduct.product 와 연결
