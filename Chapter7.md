@@ -7,6 +7,151 @@
 - 조인 테이블 (일단 패스..필요할 때 찾아보고 정리하기...)
 - 엔티티 하나에 여러 테이블 매핑하기 (일단 패스..필요할 때 찾아보고 정리하기...)
 
+## 상속 관계 매핑
+
+- 조인 전략 : 엔티티 각각을 모두 테이블로 만들고 자식 테이블이 부모 테이블의 기본 키를 받아서 기본 키 + 외래 키로 사용하는 전략이다. 따라서 조회할 때, 자주 사용한다. 이 전략을 주의할 점은 객체는 타입으로 구분할 수 있지만 테이블은 타입의 개념이 없다. 따라서 타입을 구분하는 컬럼을 추가해야 한다.
+    * 장점 : 테이블이 정규화된다. 외래 키 참조 무결성 제약조건을 활용할 수 있다. 저장공간을 효율적으로 사용한다.  
+    * 단점 : 조회할 때 조인이 많이 사용되므로 성능이 저하될 수 있다. 조회 쿼리가 복잡하다. 데이터를 등록할 INSERT SQL을 두 번 실행한다.  
+
+```java
+
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED) // 매핑 전략 지정
+@DiscriminatorColumn(name = "DTYPE")
+public abstract class Item {
+
+    @Id @GeneratedValue
+    @Column(name = "ITEM_ID")
+    private Long id;
+
+    private String name;        //이름
+    private int price;          //가격
+    private int stockQuantity;  //재고수량
+
+    @ManyToMany(mappedBy = "items")
+    private List<Category> categories = new ArrayList<Category>();
+
+    //Getter, Setter
+    
+}
+
+@Entity
+@DiscriminatorValue("A") // A가 저장됨.
+public class Album extends Item {
+
+    private String artist;
+    private String etc;
+
+
+    //Getter, Setter
+}
+
+@Entity
+@DiscriminatorValue("M") // M이 저장됨.
+public class Movie extends Item {
+
+    private String director;
+    private String actor;
+
+    //Getter, Setter
+}
+
+```
+
+- 단일 테이블 전략 : 테이블 하나만 사용한다. 그리고 구분 컬럼으로 어떤 자식 데이터가 저장되었는지 구분한다. 조회할 때 조인을 사용하지 않으므로 일반적으로 가장 빠르다. 이 전략을 사용할 때 주의점은 자식 엔티티가 매핑한 컬럼은 모두 null을 허용해야 한다는 점이다.
+    * 장점 : 조인 필요 없으므로 일반적으로 조회 성능이 빠르다. 조회 쿼리가 단순하다.  
+    * 단점 : 자식 엔티티가 매핑한 컬럼은 모두 null을 허용해야 한다. 단일 테이블에 모든 것을 저장하므로 테이블이 커질 수 있다. 오히려 조회 성능이 느려질 수 있다.
+
+```java
+
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE) // 매핑 전략 지정
+@DiscriminatorColumn(name = "DTYPE")
+public abstract class Item {
+
+    @Id @GeneratedValue
+    @Column(name = "ITEM_ID")
+    private Long id;
+
+    private String name;        //이름
+    private int price;          //가격
+    private int stockQuantity;  //재고수량
+
+    @ManyToMany(mappedBy = "items")
+    private List<Category> categories = new ArrayList<Category>();
+
+    //Getter, Setter
+    
+}
+
+@Entity
+@DiscriminatorValue("A") // A가 저장됨.
+public class Album extends Item {
+
+    private String artist;
+    private String etc;
+
+
+    //Getter, Setter
+}
+
+@Entity
+@DiscriminatorValue("M") // M이 저장됨.
+public class Movie extends Item {
+
+    private String director;
+    private String actor;
+
+    //Getter, Setter
+}
+
+```
+
+- 구현 클래스마다 테이블 전략 : 자식 엔티티마다 테이블을 만든다. 그리고 자식 테이블 각각에 필요한 컬럼이 모두 있다. (일반적으로 추천 X)
+    * 장점 : 서브 타입을 구분해서 처리할 때 효과적이다. not null 제약 조건을 사용할 수 있다.
+    * 단점 : 여러 자식 테이블을 함께 조회할 때 성능이 느리다. (SQL에 UNION을 사용해야 한다.) 자식 테이블을 통합해서 쿼리하기 어렵다.
+
+```java
+
+@Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS) // 매핑 전략 지정
+public abstract class Item {
+
+    @Id @GeneratedValue
+    @Column(name = "ITEM_ID")
+    private Long id;
+
+    private String name;        //이름
+    private int price;          //가격
+    private int stockQuantity;  //재고수량
+
+    @ManyToMany(mappedBy = "items")
+    private List<Category> categories = new ArrayList<Category>();
+
+    //Getter, Setter
+    
+}
+
+@Entity
+public class Album extends Item {
+
+    private String artist;
+    private String etc;
+
+
+    //Getter, Setter
+}
+
+@Entity
+public class Movie extends Item {
+
+    private String director;
+    private String actor;
+
+    //Getter, Setter
+}
+
+```
 
 ## @MappedSuperclass
 - 부모 클래스는 테이블과 매핑하지 않고 부모 클래스를 상속받는 자식 클래스에게 매핑 정보만 제공하고 싶으면 해당 어노테이션을 사용하면 된다.
@@ -53,8 +198,7 @@ public class Member extends BaseEntity { ... }
     @AttributeOveride(name = "name", column = @Column(name = "MEMBER_NAME"))
 })
 ```
-- __@MappedSuperclass 는 테이블과는 관계가 없고 단순히 엔티티가 공통으로 사용하는 매핑 정보를 모아주는 역할을 한 뿐이다. ORM 에서 이야기하는 진정한 상속 매핑은 이전에 학습한 객체 상속을 데이터베이스의 슈퍼타입 서브타입 관계와 매핑하는 것이다. 등록일자, 수정일자, 등록자, 수정자와 같은 여러 엔티티에서 공통으로 사용하는 속성을 효과적으로 관리할 수 있다.__
-
+- __@MappedSuperclass 는 테이블과는 관계가 없고 단순히 엔티티가 공통으로 사용하는 매핑 정보를 모아주는 역할을 한 뿐이다. ORM 에서 이야기하는 진정한 상속 매핑은 이전에 학습한 객체 상속을 데이터베이스의 슈퍼타입 서브타입 관계와 매핑하는 것이다. 등록일자, 수정일자, 등록자, 수정자와 같은 여러 엔티티에서 공통으로 사용하는 속성을 효과적으로 관리할 수 있다. 해당 클래스는 실제로 사용하지 않기 때문에 추상 클래스로 만드는 것을 추천한다.__
 
 
 ## 복합 키와 식별 관계 매핑
@@ -65,7 +209,7 @@ public class Member extends BaseEntity { ... }
 2. 비식별 관계 : 부모 테이블의 기본 키를 받아서 자식 테이블의 외래 키로만 사용하는 관계다. 또 비식별 관계에는 외래 키를 NULL을 허용하는지에 따라 필수적 비식별 관계와 선택적 비식별 관계로 나눈다. (주로 비식별 관계를 사용하고 꼭 필요한 곳에만 식별 관계를 사용하는 추세.)
 
 ## 복합 키 : 비식별 관계 매핑
-- JPA에서 식별자를 둘 이상 사용하려면 별도의 식별자 클래스를 만들어야 한다. JPA는 영속성 컨텍스틍 엔티티를 보관할 때 엔티티의 식별자를 키로 사용한다. 그리고 식별자를 구분하기 위해 equals와 hashCode를 사용해서 동등성 비교를 한다. 그런데 식별자 필드가 하나일 때는 보통 자바의 기본 타입을 사용하므로 문제가 없지만, 식별자가 2개 이상이면 별도의 식별자 클래스를 만들고 그곳에 equals와 hashCode를 구현해야 한다. @IdClass(데이터베이스에 가까운 방법)와 @EmbeddedId(객체지향에 가까운 방법) 2가지 방법이 있다.
+- JPA에서 식별자를 둘 이상 사용하려면 별도의 식별자 클래스를 만들어야 한다. JPA는 영속성 컨텍스틍 엔티티를 보관할 때 엔티티의 식별자를 키로 사용한다. 그리고 식별자를 구분하기 위해 equals와 hashCode를 사용해서 동등성 비교를 한다. 그런데 식별자 필드가 하나일 때는 보통 자바의 기본 타입을 사용하므로 문제가 없지만, 식별자가 2개 이상이면 별도의 식별자 클래스를 만들고 그곳에 __equals와 hashCode를 구현해야 한다.__ @IdClass(데이터베이스에 가까운 방법)와 @EmbeddedId(객체지향에 가까운 방법) 2가지 방법이 있다.
 
 ## @IdClass
 ```java
@@ -120,9 +264,7 @@ parent.setName("parentName");
 em.persist(Parent);
 
 ```
-
-
-- 비식별 관계의 경우 자식 클래스
+자식에 매핑
 ```java
 
 @Entity
@@ -178,10 +320,10 @@ public class ParentId implements Serializable { // 3. Serializable 구현
     }
 
     @Override
-    public boolean equals(Object o) { ... } // 5. equals가 구현되어 있어야 한다.
+    public boolean equals(Object o) { ... } // 5. equals가 구현되어 있어야 한다. 보통 모든 필드를 사용한다.
 
     @Override
-    public boolean hashCode() { ... } // 6. hashCode가 구현되어 있어야 한다.
+    public boolean hashCode() { ... } // 6. hashCode가 구현되어 있어야 한다. 보통 모든 필드를 사용한다.
     ...
 }
 
@@ -192,7 +334,7 @@ public class ParentId implements Serializable { // 3. Serializable 구현
 
 Parent parent = new Parent();
 ParentId parentId = new ParentId("id1", "id2");
-parent.setParentId(parentId);
+parent.setParentId(parentId); // 실제로 저장
 parent.setName("parentName");
 em.persist(Parent);
 
@@ -239,7 +381,7 @@ public class Child {
 public class ChildId implements Serializable {
 
     private String parent; // Child.parent 매핑
-    private string childId; //Child.childId 매핑
+    private String childId; //Child.childId 매핑
 
     //equals, hashCode
     ...
@@ -417,12 +559,11 @@ public class GrandChild {
     2. 비식별 관계의 기본 키는 주로 대리 키를 사용하는데 JPA는 @GeneratedValue처럼 대리 키를 생성하기 위한 편리한 방법을 제공한다. 
 
 
-
-
-
-
-
-
+## 조인 테이블
+- 조인 컬럼 사용 (외래 키)
+- 조인 테이블 사용 (테이블 사용)
+- 객체와 테이블을 매핑할 때 조인 컬럼은 @JoinColumn으로 매핑하고 조인 테이블은 @JoinTable로 매핑한다.
+- 조인 테이블은 주로 다대다 관계를 일대다, 다대일 관계로 풀어내기 위해 사용한다. 그렇지만 일대일, 일대다, 다대일 관계에서도 사용한다,
 
 
 
