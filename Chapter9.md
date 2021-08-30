@@ -194,76 +194,28 @@ member2.setHomeAddress(address);
 ```
 
 ## 불변 객체
-
-- 즉시 로딩 : 즉시 로딩을 사용하려면 @ManyToOne의 fetch 속성을 FetchType.EAGER로 지정
+- 값 타입은 부작용 걱정 없이 사용할 수 있어야 한다. 부작용이 일어나면 값 타입이라 찰 수 없다. 객체를 불변하게 만들면 값을 수정할 수 없으므로 부작용을 원천 차단할 수 있다. 따라서 값 타입은 될 수 있으면 불변 객체로 설계해야 한다.
 ```java
 
-@Entity
-public class Member {
-    //...
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "TEAM_ID")
-    private Team team;
-    //...
+@Embeddable
+public class Address {
+    private String city;
+    protected Address() { //JPA에서 기본 생성자는 필수다.
+
+    }
+    // 생성자로 초기 값을 설정한다.
+    public Address(String city) {
+        this.city = city;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    // Setter는 만들지 않는다.
 }
-
-Member member = em.find(Member.class, "member1");
-Team team = member.getTeam(); // 객체 그래프 탐색
-
-```
-조인 쿼리로 한방에 조회함.
-```sql
-
-SELECT 
-    M.MEMBER_ID AS MEMBER_ID,
-    M.TEAM_ID AS TEAM_ID,
-    M.USERNAME AS USERNAME,
-    T.TEAM_ID AS TEAM ID,
-    T.NAME AS NAME,
-FROM 
-    MEMBER M LEFT OUTER JOIN TEAM T
-    ON M.TEAM_ID = T.TEAM_ID
-WHERE
-    M.MEMBER_ID = 'member1'
-
 ```
 
-## __중요__ NULL 제약조건과 JPA 조인 전략 
-- 위 예제에서 LEFT OUTER JOIN을 한 부분을 잘 봐야한다. 현재 히ㅗ원 테이블에 TEAM_ID 외래 키는 NULL 값을 허용하고 있다. 따라서 팀에 소속되지 않은 회원이 있을 가능성이 있다. 팀에 소속하지 않은 회원과 팀을 내부 조인하면 팀은 물론이고 회원 데이터도 조회할 수 없다. JPA는 이런 상황을 고려하여 외부 조인을 한다. 하지만 외부 조인보다 내부 조인이 성능과 최적화에서 유리한다. 그럼 내부 조인을 사용하려면 어떻게 해야할까?
-외래 키에 NOT NULL 제약조건을 설정하면 값이 있는 것을 보장한다. 따라서 이때는 내부 조인만 사용해도 된다.
-JPA에게도 이런 사실을 알려줘야하기 때문에 @JoinColumn에 nullable = false을 설정해서 이 외래 키는 NULL 값을 허용하지 않는다고 알려주면 JPA는 외부 조인 대신 내부 조인을 사용한다. 
-- JoinColumn(nullable = true) : NULL 허용(default), 외부 조인 사용 
-- JoinColumn(nullable = false) :  NULL 허용하지 않음, 내부 조인 사용
-
-
-- 지연 로딩 : 지연 로딩을 사용하려면 @ManyToOne의 fetch 속성을 FetchType.LAZY로 지정
-```java
-
-@Entity
-public class Member {
-    //...
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "TEAM_ID")
-    private Team team;
-    //...
-}
-
-Member member = em.find(Member.class, "member1");
-Team team = member.getTeam(); // 객체 그래프 탐색, 프록시 객체를 team에 넣어둔다.
-team,getName(); // 팀 객체 실제 사용
-
-```
-
-## 상황에 따라 즉시 로딩, 지연 로딩을 사용하자. 책에서는 모두 지연 로딩으로 개발을 하고 나중에 자주 같이 많이 사용되는 부분은 즉시 로딩으로 바꾸는 것을 권한다.
-
-## 기본 패치 전략
-- @ManyToOne, @OneToOne : 즉시로딩
-- @OneToMay, @ManyToMany : 지연로딩
-- 컬렉션을 가지면 지연 로딩을 기본값으로 갖는다.
-
-## 영속성 전이 : CASCADE
-- 영속성 전이 : 쉽게 말해 연관관계를 가진 엔티티끼리 저장될 때 같이 저장되고 삭제될 때 같이 삭제되게 해주는 방법이다.
-- 저장은 CascadeType.PERSIST, 삭제는 CascadeType.REMOVE
-
-## 고아 객체 : 부모 엔티티와 연관관계가 끊어진 자식 엔티티를 자동으로 삭제하는 기능을 제공.
-
+## 값 타입의 비교
+- 동일성 비교 : 인스턴스의 참조 값을 비교, == 사용
+- 동등성 비교 : 인스턴스의 값을 비교, equals 사용
