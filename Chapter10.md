@@ -48,3 +48,23 @@ List<Member> members = query.from(member).where(member.usename.eq("kim")).list(m
 __네이티브 SQL, JDBC, Mybatis 등등이 있다...__
 
 ## 더욱 더 자세히...책을 보자...쓰기에는 너무 많다... 그래도 아래에 정리를 조금씩 해보겠습니다...
+
+
+
+## JPQL
+- SELECT : SELECT m FROM Member AS m where m.username = 'Hello';
+    * 대소문자 구분, 엔티티 이름, 별칭은 필수
+    * TypeQuery : 반환 타입을 명확하게 지정할 수 있을 때
+    * Query : 반환 타입을 명확하게 지정할 수 없을 때
+    * 파라미터 바인딩
+    ```java
+    String usernameParam = "User1";
+    TypeQuery query = em.createQuery("SELECT m FROM Member AS m where m.username = :username", Member.class);
+
+    query.setParameter("username", usernameParam);
+    List<Member> resultList = query.getResultList();
+    ```
+- 프로젝션 : SELECT 절에 조회할 대상을 지정하는 것을 프로젝션이라고 한다.
+    * 엔티티 프로젝션 - SELECT m FROM Member m, SELECT m.team FROM Member m
+    * 임베디드 타입 프로젝션 - 
+
