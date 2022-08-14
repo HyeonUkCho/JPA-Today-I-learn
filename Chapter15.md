@@ -17,4 +17,4 @@
 - 스프링은 해당 현상을 미연에 방지하기 위해서 엔티티를 클리어한다. (clear() 함. doRollback 참고)
 - OSIV : 영속성의 범위를 트랜잭션보다 넓게할 경우, 여러 트랜잭션이 하나의 영속성 컨텍스트 사용
 
-![Persistence Context Scopeß](/Users/hyunwook/Pictures/persistence_context_scope.png)
+![Persistence Context Scope](https://github.com/HyeonUkCho/JPA-Today-I-learn/issues/1#issuecomment-1214449595)
