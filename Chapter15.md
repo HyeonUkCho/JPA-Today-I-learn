@@ -17,4 +17,9 @@
 - 스프링은 해당 현상을 미연에 방지하기 위해서 엔티티를 클리어한다. (clear() 함. doRollback 참고)
 - OSIV : 영속성의 범위를 트랜잭션보다 넓게할 경우, 여러 트랜잭션이 하나의 영속성 컨텍스트 사용
 
+- 같은 영속성 컨텍스트에서 조회, 저장 엔티티 완전히 같다.
 ![Persistence Context Scope](https://user-images.githubusercontent.com/18049575/184555036-365befbc-16fb-4f7a-bac8-4c95ed9763b8.png)
+
+- 만약 테스트 클래스에서 @Transactional > 테스트 끝날 때 commit하지 않고 강제로 롤백 > 영속성 컨텍스트 flush하지 않음 > 쿼리 안보임 > 쿼리 보려면 em.flush() 해야함.
+
+- __엔티티를 비교할 때는 비즈니스 키를 활용한 동등성 비교를 하자__
