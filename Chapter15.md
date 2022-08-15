@@ -67,12 +67,14 @@ public class Member {
   public boolean equals(Object obj) {
     if(this == obj) return true;
     if(obj == null) return false;
-    if(this.getClass() != obj.getClass()) return false;
+
+    if(this.getClass() != obj.getClass()) return false; // 프록시의 경우,
+                                                        // instanceof로 비교하여야 한다.
 
     Member member = (Member) obj;
 
     if(name != null ? name.equals(member.name) :
-    member.name != null) {
+    member.name != null) { // 프록시의 경우 null 반환 getName()으로 접근해야한다.
       return false;
     }
 
@@ -96,3 +98,44 @@ public void 프록시와_동등성_비교() {
   Assert.assertTrue(newMember.equals(refMember));
 }
 ```
+
+### 상속관계와 프록시
+```java
+@Test
+public void 부모타입으로_프록시조회() {
+  // 테스트 데이터 준비
+  Book saveBook = new Book();
+  saveBook.setName("jpaBook")
+  saveBook.setAuthor("kim");
+  em.persist(saveBook);
+
+  em.flush();
+  em.clear();
+
+  // 테스트 시작
+  Item proxItem = em.getReference(Item.class, saveBook.getId()); // Item Base Proxy
+  System.out.println("proxyItem = " + proxyItem.getClass());
+
+  if(proxyItem instanceof Book) {
+    System.out.println("proxyItem instanceof Book");
+    Book book = (Book) proxyItem; // Item Base Proxy이기 때문에 다운캐스팅도 오류 발생
+    System.out.println("Book Author = " + book.getAuthor());
+  }
+
+  // 결과검증
+  Assert.assertFalse(proxyItem.getClass() == Book.class);
+  Assert.assertFalse(proxyItem instanceof Book); // Item 기반 > ClassCastException 발생
+  Assert.assertTrue(proxyItem instanceof Item);
+}
+```
+
+### Visitor Pattern
+프록시에 대한 걱정 없이 안전한게 원본 엔티티에 접근할 수 있고 instanceof나 타입캐스팅 없이 코드를 구현할 수 있는 장점이 있다.
+- 장점
+  1. 프록시에 대한 걱정 없이 안전하게 원본 엔티티에 접근할 수 있다.
+  2. instanceof와 타입캐스팅 없이 코드를 구현할 수 있다.
+  3. 알고리즘과 객체 구조를 분리해서 구조를 수정하지 않고 새로운 동작을 추가할 수 있다.
+- 단점
+  1. 너무 복잡하고 더블 디스패치를 사용하기 때문에 이해하기 어렵다.
+  2. 객체 구조가 변경되면 모든 Visitor를 수정해야 한다.
+
